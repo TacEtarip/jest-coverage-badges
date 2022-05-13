@@ -18,7 +18,7 @@ const findArgument = (argName, defaultOutput) => {
     return defaultOutput;
   }
 
-  const index = process.argv.findIndex(a => a.match(argName))
+  const index = process.argv.findIndex((a) => a.match(argName));
   if (index < 0) {
     return defaultOutput;
   }
@@ -28,7 +28,7 @@ const findArgument = (argName, defaultOutput) => {
   } catch (e) {
     return defaultOutput;
   }
-}
+};
 
 const outputPath = findArgument('output', './coverage');
 const inputPath = findArgument('input', './coverage/coverage-summary.json');
@@ -52,11 +52,16 @@ const getBadge = (report, key) => {
     throw new Error('malformed coverage report');
   }
 
-  const coverage = (!report.total[key] || typeof report.total[key].pct !== 'number') ? 0 : report.total[key].pct;
+  const coverage =
+    !report.total[key] || typeof report.total[key].pct !== 'number'
+      ? 0
+      : report.total[key].pct;
   const colour = getColour(coverage);
 
-  return `https://img.shields.io/badge/Coverage${encodeURI(':')}${key}-${coverage}${encodeURI('%')}-${colour}.svg`;
-}
+  return `https://img.shields.io/badge/Coverage${encodeURI(
+    ':',
+  )}${key}-${coverage}${encodeURI('%')}-${colour}.svg`;
+};
 
 const download = (url, cb) => {
   get(url, (res) => {
@@ -65,8 +70,8 @@ const download = (url, cb) => {
       file += chunk;
     });
     res.on('end', () => cb(null, file));
-  }).on('error', err => cb(err));
-}
+  }).on('error', (err) => cb(err));
+};
 
 const writeBadgeInFolder = (key, res) => {
   writeFile(`${outputPath}/badge-${key}.svg`, res, 'utf8', (writeError) => {
@@ -74,24 +79,22 @@ const writeBadgeInFolder = (key, res) => {
       throw writeError;
     }
   });
-}
+};
 
-const getBadgeByKey = report => (key) => {
+const getBadgeByKey = (report) => (key) => {
   const url = getBadge(report, key);
 
   download(url, (err, res) => {
     if (err) {
       throw err;
     }
-    mkdirp(outputPath, (folderError) => {
-      if (folderError) {
+    mkdirp(outputPath)
+      .then(() => writeBadgeInFolder(key, res))
+      .catch((folderError) => {
         console.error(`Could not create output directory ${folderError}`);
-      } else {
-        writeBadgeInFolder(key, res);
-      }
-    })
-  })
-}
+      });
+  });
+};
 
 readFile(`${inputPath}`, 'utf8', (err, res) => {
   if (err) {
